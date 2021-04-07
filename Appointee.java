@@ -15,14 +15,18 @@ public class Appointee {
     private boolean diabetic;
     private boolean obese;
     private int priority = 5;
+    private boolean login;
     
     
     
-    public Appointee(String name, int age, boolean diabetic, boolean obese){
+    
+    
+    public Appointee(String name, int age, boolean diabetic, boolean obese, boolean login){
         this.name = name;
         this.age = age;
         this.diabetic = diabetic;
         this.obese = obese;
+        this.login = login;
         if(obese){
             priority += 2;
         }
@@ -79,6 +83,14 @@ public class Appointee {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public boolean isLogin() {
+        return login;
+    }
+
+    public void setLogin(boolean login) {
+        this.login = login;
     }
     
     
