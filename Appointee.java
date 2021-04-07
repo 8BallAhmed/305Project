@@ -10,40 +10,46 @@ package cpit305project;
  * @author Ahmed
  */
 public class Appointee {
+
+    private int ssn;
+    private String password;
     private String name;
     private int age;
     private boolean diabetic;
     private boolean obese;
     private int priority = 5;
     private boolean login;
-    
-    
-    
-    
-    
-    public Appointee(String name, int age, boolean diabetic, boolean obese, boolean login){
+
+    public Appointee(int ssn, String password, String name, int age, boolean diabetic, boolean obese, boolean login) {
+        this.ssn = ssn;
+        this.password = password;
         this.name = name;
         this.age = age;
         this.diabetic = diabetic;
         this.obese = obese;
         this.login = login;
-        if(obese){
+
+        if (login) {
+            //check database for appointee
+        } else {
+            //add appointee to database
+        }
+        if (obese) {
             priority += 2;
         }
-        if(diabetic){
+        if (diabetic) {
             priority += 3;
         }
-        if(age >= 0 && age <= 21){
+        if (age >= 0 && age <= 21) {
             priority -= 4;
-        }else if(age >= 21 && age <= 35){
+        } else if (age >= 21 && age <= 35) {
             priority -= 3;
-        }else if(age >= 35 && age <= 45){
+        } else if (age >= 35 && age <= 45) {
             priority -= 2;
-        }else if(age >= 45 && age <= 55){
+        } else if (age >= 45 && age <= 55) {
             priority -= 1;
         }
     }
-    
 
     public String getName() {
         return name;
@@ -92,6 +98,21 @@ public class Appointee {
     public void setLogin(boolean login) {
         this.login = login;
     }
-    
-    
+
+    public int getSsn() {
+        return ssn;
+    }
+
+    public void setSsn(int ssn) {
+        this.ssn = ssn;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
 }
