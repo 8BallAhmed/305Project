@@ -6,7 +6,8 @@ import java.net.*;
 public class ClientSide {
 
     private Appointee appointee;
-
+    public static Socket client;
+    
     public ClientSide() {
     }
 
@@ -32,6 +33,14 @@ public class ClientSide {
     public String toString() {
         return "Name: " + appointee.getName() + "\tAge: " + appointee.getAge()
                 + "\tDiabetes: " + appointee.isDiabetic() + "\tObesity: " + appointee.isObese();
+    }
+
+    public Appointee getAppointee() {
+        return appointee;
+    }
+
+    public void setAppointee(Appointee appointee) {
+        this.appointee = appointee;
     }
 
 }
