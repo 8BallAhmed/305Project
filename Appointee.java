@@ -5,11 +5,13 @@
  */
 package cpit305project;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Ahmed
  */
-public class Appointee {
+public class Appointee implements Serializable {
 
     private int ssn;
     private String password;
@@ -113,6 +115,12 @@ public class Appointee {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "SSN" + ssn + "\nName: " + name + "\nAge: " + age + "\nDiabetic?: " + diabetic + "\nObese?: " + obese
+                + "\nLogin?: " + login;
     }
 
 }

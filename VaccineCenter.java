@@ -15,6 +15,7 @@ import java.util.ArrayList;
 public class VaccineCenter {
 
     private static int appointmentID;
+    private String name;
 
     public static int getAppointmentID() {
         return appointmentID;
@@ -27,8 +28,9 @@ public class VaccineCenter {
     private Vaccine vaccine;
     private ArrayList<Appointment> appointments = new ArrayList();
 
-    public VaccineCenter(Vaccine vaccine) {
+    public VaccineCenter(String name, Vaccine vaccine) {
         this.vaccine = vaccine;
+        this.name = name;
     }
 
     public void removePassedDates() {
@@ -53,6 +55,14 @@ public class VaccineCenter {
 
     public void setDates(ArrayList<Appointment> dates) {
         this.appointments = dates;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
 }

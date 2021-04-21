@@ -23,7 +23,7 @@ public class Appointment {
     private int appointmentPriority;
     private Appointee appointee;
 
-    public Appointment(int appointmentID, Vaccine v, LocalDateTime firstVDate) {
+    public Appointment(int appointmentID, Vaccine v, LocalDateTime firstVDate, int appointmentPriority) {
         appointee = null;
         this.appointmentID = appointmentID;
         this.v = v;
@@ -31,10 +31,16 @@ public class Appointment {
         int cumulativeDuration = 0;
         dates = new LocalDateTime[v.getNumOfShots()];
         for (int i = 0; i < dates.length; i++) {
-            dates[i] = LocalDateTime.of(firstVDate.getYear(), (firstVDate.getMonth().getValue() + cumulativeDuration), firstVDate.getDayOfMonth(), firstVDate.getHour(), firstVDate.getMinute());
+            int year = firstVDate.getYear();
+            int month = (firstVDate.getMonth().getValue() + cumulativeDuration);
+            if(month > 12){
+                month = month - 12;
+                year++;
+            }
+            dates[i] = LocalDateTime.of(year, month, firstVDate.getDayOfMonth(), firstVDate.getHour(), firstVDate.getMinute());
             cumulativeDuration += DurationBetweenShots;
         }
-
+        this.appointmentPriority = appointmentPriority;
     }
 
     public boolean isBooked() {
@@ -94,6 +100,15 @@ public class Appointment {
 
     public void setAppointmentPriority(int appointmentPriority) {
         this.appointmentPriority = appointmentPriority;
+    }
+    
+    public String toString(){
+      String appointments = "Appointment of ID " + appointmentID + ": \n";
+        for (int i = 0; i < dates.length; i++) {
+            appointments += dates[i].toString() + "\n";
+        }
+        appointments+="\n";
+        return appointments;
     }
 
 }
