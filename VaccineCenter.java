@@ -5,6 +5,14 @@
  */
 package cpit305project;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -12,7 +20,7 @@ import java.util.ArrayList;
  *
  * @author Ahmed
  */
-public class VaccineCenter {
+public class VaccineCenter implements Serializable {
 
     private static int appointmentID;
     private String name;
@@ -28,7 +36,7 @@ public class VaccineCenter {
     private Vaccine vaccine;
     private ArrayList<Appointment> appointments = new ArrayList();
 
-    public VaccineCenter(String name, Vaccine vaccine) {
+    public VaccineCenter(String name, Vaccine vaccine) throws FileNotFoundException, IOException {
         this.vaccine = vaccine;
         this.name = name;
     }

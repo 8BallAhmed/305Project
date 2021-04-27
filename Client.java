@@ -10,6 +10,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import static java.lang.System.in;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -27,15 +29,19 @@ public class Client extends javax.swing.JFrame {
     Socket s;
     ServerWriter sw;
     ServerReader sr;
-    static Appointment clientAppointment;
+    static Appointment clientAppointment = null;
     static Appointee clientAppointee;
     static boolean connected = false;
+    static ArrayList<VaccineCenter> vcList_server;
+    static DefaultTableModel appointmentModel;
+    static ArrayList<Appointment> appointments;
 
     /**
      * Creates new form Client
      */
     public Client() {
         initComponents();
+        appointmentModel = (DefaultTableModel) appointmentTable.getModel();
     }
 
     /**
@@ -67,7 +73,14 @@ public class Client extends javax.swing.JFrame {
         isDiabetic = new javax.swing.JCheckBox();
         isObese = new javax.swing.JCheckBox();
         jPanel3 = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        appointmentTable = new javax.swing.JTable();
+        appointmentIDTextField = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        bookButton = new javax.swing.JButton();
+        cancelAppointmentButton = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
+        yourAppointments = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -197,31 +210,102 @@ public class Client extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("Register", jPanel2);
 
+        appointmentTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "ID", "Location", "Vaccine", "First Dose"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane1.setViewportView(appointmentTable);
+        if (appointmentTable.getColumnModel().getColumnCount() > 0) {
+            appointmentTable.getColumnModel().getColumn(0).setResizable(false);
+            appointmentTable.getColumnModel().getColumn(1).setResizable(false);
+            appointmentTable.getColumnModel().getColumn(2).setResizable(false);
+            appointmentTable.getColumnModel().getColumn(3).setResizable(false);
+        }
+
+        jLabel7.setText("Appointment ID");
+
+        bookButton.setText("Book Appointment");
+        bookButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bookButtonActionPerformed(evt);
+            }
+        });
+
+        cancelAppointmentButton.setText("Cancel Appointment");
+        cancelAppointmentButton.setEnabled(false);
+        cancelAppointmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelAppointmentButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 892, Short.MAX_VALUE)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1)
+                .addContainerGap())
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(164, 164, 164)
+                .addComponent(jLabel7)
+                .addGap(18, 18, 18)
+                .addComponent(appointmentIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(bookButton)
+                .addGap(35, 35, 35)
+                .addComponent(cancelAppointmentButton)
+                .addContainerGap(235, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 518, Short.MAX_VALUE)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 389, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(28, 28, 28)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(appointmentIDTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7)
+                    .addComponent(bookButton)
+                    .addComponent(cancelAppointmentButton))
+                .addContainerGap(63, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Book Appointments", jPanel3);
+
+        yourAppointments.setText("You have no appointments.");
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 892, Short.MAX_VALUE)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(63, 63, 63)
+                .addComponent(yourAppointments)
+                .addContainerGap(677, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 518, Short.MAX_VALUE)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(127, 127, 127)
+                .addComponent(yourAppointments)
+                .addContainerGap(375, Short.MAX_VALUE))
         );
 
-        jTabbedPane1.addTab("Cancel Appointment", jPanel4);
+        jTabbedPane1.addTab("Your appointment(s)", jPanel4);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -291,7 +375,6 @@ public class Client extends javax.swing.JFrame {
             }
             connected = true;
         }
-
         try {
             int ssn = Integer.parseInt(registerSSN.getText());
             String name = registerUsername.getText();
@@ -309,6 +392,61 @@ public class Client extends javax.swing.JFrame {
 
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void bookButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bookButtonActionPerformed
+        if (clientAppointment != null) {
+            JOptionPane.showMessageDialog(null, "You already have an appointment booked!");
+        } else {
+            try {
+                if (appointmentModel.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(null, "There are no appointments to book!");
+                    return;
+                }
+                int id = Integer.parseInt(appointmentIDTextField.getText());
+                for (Appointment appointment : appointments) {
+                    if (appointment.getAppointmentID() == id) {
+                        clientAppointment = appointment;
+                        sw.writeAppointment(clientAppointment);
+                        cancelAppointmentButton.setEnabled(true);
+                        bookButton.setEnabled(false);
+                        yourAppointments.setText(appointment.toString());
+                        return;
+                    }
+                }
+
+                System.out.println("Booking successful!");
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Please enter an ID in the specified field!");
+            } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        // TODO add your handling code here:
+    }//GEN-LAST:event_bookButtonActionPerformed
+
+    private void cancelAppointmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelAppointmentButtonActionPerformed
+        try {
+            int id = Integer.parseInt(appointmentIDTextField.getText());
+            sw.writeAppointment(clientAppointment);
+            clientAppointment = null;
+            JOptionPane.showMessageDialog(null, "Appointment cancelled!");
+            cancelAppointmentButton.setEnabled(false);
+            bookButton.setEnabled(true);
+            yourAppointments.setText("You have no appointments.");
+            return;
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Please enter an ID in the specified field!");
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        cancelAppointmentButton.setEnabled(false);
+        bookButton.setEnabled(true);
+
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cancelAppointmentButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -349,6 +487,10 @@ public class Client extends javax.swing.JFrame {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField appointmentIDTextField;
+    private javax.swing.JTable appointmentTable;
+    private javax.swing.JButton bookButton;
+    private javax.swing.JButton cancelAppointmentButton;
     private javax.swing.JCheckBox isDiabetic;
     private javax.swing.JCheckBox isObese;
     private javax.swing.JButton jButton1;
@@ -359,10 +501,12 @@ public class Client extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField loginPassword;
     private javax.swing.JTextField loginUser;
@@ -370,6 +514,7 @@ public class Client extends javax.swing.JFrame {
     private javax.swing.JTextField registerPassword;
     private javax.swing.JTextField registerSSN;
     private javax.swing.JTextField registerUsername;
+    private javax.swing.JLabel yourAppointments;
     // End of variables declaration//GEN-END:variables
 }
 
@@ -408,9 +553,13 @@ class ServerReader extends Thread {
                     System.out.println("Object is of type Appointment!");
                     appointment = (Appointment) o;
                     clientAppointment = appointment;
+                    System.out.println("Appointment Received!");
+                    JOptionPane.showMessageDialog(null, "Appointment Booked from server!");
+                    o = null;
                 } else if (o instanceof VaccineCenter) { // Handle Vaccine center, show appointments and help book
                     System.out.println("Object is of type Vaccine Center!");
                     vc = (VaccineCenter) o;
+                    o = null;
                 } else if (o instanceof Appointee) { // Registeration / Login confirmed, store info of appointee.
                     System.out.println("Object is of type Appointee!");
                     appointee = (Appointee) o;
@@ -421,11 +570,47 @@ class ServerReader extends Thread {
                     } else {
                         System.out.println("Registration complete!");
                     }
+                    o = null;
                 } else if (o instanceof ArrayList) { // Handle appointment update here
                     System.out.println("Object is of type ArrayList!");
+                    Client.vcList_server = (ArrayList) o;
+                    VaccineCenter vcServer;
+                    if (!Client.vcList_server.isEmpty() && Client.vcList_server.get(0) instanceof VaccineCenter) {
+                        System.out.println("It enters here! Should delete rows from table.");
+                        for (int i = 0; i < Client.appointmentModel.getRowCount(); i++) {
+                            Client.appointmentModel.removeRow(i);
+                        }
+                        System.out.println("Rows deleted.");
+                        System.out.println("List of type VaccineCenter received from server!");
+                        for (int i = 0; i < Client.vcList_server.size(); i++) {
+                            vcServer = (VaccineCenter) Client.vcList_server.get(i);
+                            Client.appointments = vcServer.getDates();
+                            for (Appointment a : Client.appointments) {
+                                if (Client.clientAppointee.getPriority() >= a.getAppointmentPriority() && !a.isBooked()) {
+                                    Object[] row = {a.getAppointmentID(), vcServer.getName(), vcServer.getVaccine().getName(), a.getDates()[0]};
+                                    Client.appointmentModel.addRow(row);
+                                }
+                            }
+                            System.out.println("Vaccine Center name: " + vcServer.getName()
+                                    + "\nVaccine Center appointments: "
+                            );
+                            for (int j = 0; j < vcServer.getDates().size(); j++) {
+                                System.out.println("Vaccine at Vaccine Center: "
+                                        + vcServer.getDates().get(i).getV().getName());
+                                System.out.println("Dates: ");
+                                for (int k = 0; k < vcServer.getDates().get(i).getDates().length; k++) {
+                                    System.out.println(vcServer.getDates().get(i).getDates()[k]);
+                                }
+                            }
+                        }
+                    }
+                    o = null;
                 } else if (o instanceof AppointeeNotFound) {
                     System.out.println("AppointeeNotFound exception received from server.");
                     JOptionPane.showMessageDialog(null, "Wrong Username / Password!");
+                    o = null;
+                } else if (o == null) {
+                    // JOptionPane.showMessageDialog(null, "The appointment you are trying to book is no longer available!");
                 }
             } catch (IOException ex) {
 
@@ -441,6 +626,7 @@ class ServerWriter {
 
     Socket s;
     ObjectOutputStream oos;
+    ServerReader sr;
 
     public ServerWriter(Socket s) throws IOException {
         System.out.println("Server writer created!");

@@ -5,11 +5,13 @@
  */
 package cpit305project;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Ahmed
  */
-public class Vaccine {
+public class Vaccine implements Serializable{
     
     private String name;
     private int numOfShots;

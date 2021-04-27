@@ -12,11 +12,25 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
@@ -29,9 +43,10 @@ import javax.swing.table.DefaultTableModel;
 public class ServerSide extends javax.swing.JFrame {
 
     public static ArrayList<Appointee> appointees = new ArrayList<Appointee>();
-
     static ArrayList<Vaccine> vaccines = new ArrayList<Vaccine>();
     static ArrayList<VaccineCenter> vaccineCenters = new ArrayList<VaccineCenter>();
+    static ArrayList<ClientWriter> clientWriters = new ArrayList<ClientWriter>();
+    static Connection clientHandlerDB;
 
     /**
      * Creates new form ServerSide
@@ -57,6 +72,7 @@ public class ServerSide extends javax.swing.JFrame {
         vaccineList = new javax.swing.JComboBox<>();
         jLabel5 = new javax.swing.JLabel();
         jButton4 = new javax.swing.JButton();
+        closeServer = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         vaccineName = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
@@ -82,6 +98,7 @@ public class ServerSide extends javax.swing.JFrame {
         prioritySlider = new javax.swing.JSlider();
         jLabel12 = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
+        jLabel15 = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
         vaccineCenterAppointments = new javax.swing.JComboBox<>();
         jLabel14 = new javax.swing.JLabel();
@@ -93,6 +110,7 @@ public class ServerSide extends javax.swing.JFrame {
         jLabel1.setText("Vaccine Center Name");
 
         jButton1.setText("Create Vaccine Center");
+        jButton1.setEnabled(false);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
@@ -107,6 +125,14 @@ public class ServerSide extends javax.swing.JFrame {
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton4ActionPerformed(evt);
+            }
+        });
+
+        closeServer.setText("Close Server");
+        closeServer.setEnabled(false);
+        closeServer.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                closeServerActionPerformed(evt);
             }
         });
 
@@ -126,6 +152,7 @@ public class ServerSide extends javax.swing.JFrame {
                             .addComponent(vaccineList, 0, 146, Short.MAX_VALUE)
                             .addComponent(vcName)))
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(closeServer, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jButton1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap(672, Short.MAX_VALUE))
@@ -145,7 +172,9 @@ public class ServerSide extends javax.swing.JFrame {
                 .addComponent(jButton1)
                 .addGap(18, 18, 18)
                 .addComponent(jButton4)
-                .addContainerGap(356, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(closeServer)
+                .addContainerGap(306, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Vaccine Center", jPanel1);
@@ -231,6 +260,8 @@ public class ServerSide extends javax.swing.JFrame {
 
         jLabel13.setText("10");
 
+        jLabel15.setText("Priority");
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
@@ -264,7 +295,10 @@ public class ServerSide extends javax.swing.JFrame {
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(vcList, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel10))
+                            .addComponent(jLabel10)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addGap(57, 57, 57)
+                                .addComponent(jLabel15)))
                         .addGap(0, 304, Short.MAX_VALUE)))
                 .addGap(396, 396, 396))
             .addGroup(jPanel3Layout.createSequentialGroup()
@@ -305,7 +339,9 @@ public class ServerSide extends javax.swing.JFrame {
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(hour, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(minute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(34, 34, 34)
+                .addGap(12, 12, 12)
+                .addComponent(jLabel15)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(prioritySlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel12)
@@ -405,23 +441,38 @@ public class ServerSide extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        Vaccine v = null;
-        for (int i = 0; i < vaccines.size(); i++) {
-            if (vaccines.get(i).getName().equalsIgnoreCase(vaccineList.getSelectedItem().toString())) {
-                v = vaccines.get(i);
-            }
-            System.out.println("IS VACCINE NULL?: " + (v == null));
+        try {
+            Vaccine v = null;
+            for (int i = 0; i < vaccines.size(); i++) {
+                if (vaccines.get(i).getName().equalsIgnoreCase(vaccineList.getSelectedItem().toString())) {
+                    v = vaccines.get(i);
+                }
+                System.out.println("IS VACCINE NULL?: " + (v == null));
 
+            }
+            PreparedStatement ps = ServerSide.clientHandlerDB.prepareStatement("update vaccine set vaccine_center_name = ? where name = ?");
+            ps.setString(1, vcName.getText());
+            ps.setString(2, v.getName());
+            ps.execute();
+            ps = ServerSide.clientHandlerDB.prepareStatement("insert into vaccine_center values(?)");
+            ps.setString(1, vcName.getText());
+            ps.execute();
+            vaccineCenters.add(new VaccineCenter(vcName.getText(), v));
+            vcList.setEnabled(true);
+            vcList.removeAllItems();
+            vaccineCenterAppointments.removeAllItems();
+            for (int i = 0; i < vaccineCenters.size(); i++) {
+                vcList.addItem(vaccineCenters.get(i).getName());
+                vaccineCenterAppointments.addItem(vaccineCenters.get(i).getName());
+            }
+            vaccineCenterAppointments.setEnabled(true);
+        } catch (SQLIntegrityConstraintViolationException e) {
+            JOptionPane.showMessageDialog(null, "Vaccine Center already exists in Database!");
+        } catch (SQLException e) {
+            System.out.println("Vaccine could not be updated!");
+        } catch (IOException ex) {
+            Logger.getLogger(ServerSide.class.getName()).log(Level.SEVERE, null, ex);
         }
-        vaccineCenters.add(new VaccineCenter(vcName.getText(), v));
-        vcList.setEnabled(true);
-        vcList.removeAllItems();
-        vaccineCenterAppointments.removeAllItems();
-        for (int i = 0; i < vaccineCenters.size(); i++) {
-            vcList.addItem(vaccineCenters.get(i).getName());
-            vaccineCenterAppointments.addItem(vaccineCenters.get(i).getName());
-        }
-        vaccineCenterAppointments.setEnabled(true);
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -429,21 +480,33 @@ public class ServerSide extends javax.swing.JFrame {
             int numOfShots = Integer.parseInt(vaccineShots.getText());
             int durationBetweenShots = Integer.parseInt(vaccineDuration.getText());
             String name = vaccineName.getText();
+            PreparedStatement s = ServerSide.clientHandlerDB.prepareStatement("insert into vaccine values(?,?,?,?)");
+            s.setString(1, name);
+            s.setInt(2, numOfShots);
+            s.setInt(3, durationBetweenShots);
+            s.setNull(4, java.sql.Types.NULL);
+            s.execute();
             vaccines.add(new Vaccine(name, numOfShots, durationBetweenShots));
             vaccineList.setEnabled(true);
             vaccineList.removeAllItems();
             for (int i = 0; i < vaccines.size(); i++) {
                 vaccineList.addItem(vaccines.get(i).getName());
             }
+            jButton1.setEnabled(true);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, "Please make sure you entered Integers for [Number of Shots] and [Duration Between Shots]");
+        } catch (SQLIntegrityConstraintViolationException e) {
+            JOptionPane.showMessageDialog(null, "Vaccine already exists in Database!");
+        } catch (SQLException ex) {
         }
 
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+
         try {
+
             int h = Integer.parseInt(hour.getText());
             int min = Integer.parseInt(minute.getText());
             int m = Integer.parseInt(month.getText());
@@ -460,13 +523,32 @@ public class ServerSide extends javax.swing.JFrame {
                     System.out.println("Vaccine Center found! Is null?: " + (vc == null) + "\nName?: " + vc.getName());
                     break;
                 }
-            }
+            }// Work from here
             Appointment appointment = new Appointment(VaccineCenter.getAppointmentID(), vc.getVaccine(), ldt, prioritySlider.getValue());
             VaccineCenter.setAppointmentID(VaccineCenter.getAppointmentID() + 1);
+            PreparedStatement s = ServerSide.clientHandlerDB.prepareStatement("insert into appointment values(?, ?, ?, ?, ?, ?)"); // NEWLY ADDED
+            s.setInt(1, appointment.getAppointmentID());
+
+            Date date = new Date(appointment.getDates()[0].getYear(), appointment.getDates()[0].getMonthValue(),
+                    appointment.getDates()[0].getDayOfMonth(), appointment.getDates()[0].getHour() + 1, appointment.getDates()[0].getMinute() - 1);
+
+            s.setTimestamp(2, new Timestamp(date.getYear() - 1900, date.getMonth() - 1, date.getDate(), date.getHours() - 1, date.getMinutes() + 1, 0, 0));
+            s.setInt(3, 0);
+            s.setInt(4, appointment.getAppointmentPriority());
+            s.setString(5, appointment.getV().getName());
+            s.setNull(6, java.sql.Types.NULL);
+            s.execute();
             vc.getDates().add(appointment);
             System.out.println(appointment.toString());
+            for (ClientWriter cw : ServerSide.clientWriters) {
+                cw.WriteVaccineCenters(vaccineCenters);
+            }
         } catch (NumberFormatException e) {
 
+        } catch (IOException ex) {
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ServerSide.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }//GEN-LAST:event_jButton3ActionPerformed
@@ -529,9 +611,20 @@ public class ServerSide extends javax.swing.JFrame {
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         new ConnectionHandler().start();
         jButton4.setEnabled(false);
-
+        closeServer.setEnabled(true);
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void closeServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeServerActionPerformed
+
+        try {
+            clientHandlerDB.close();
+            System.exit(0);
+            // TODO add your handling code here:
+        } catch (SQLException ex) {
+            Logger.getLogger(ServerSide.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_closeServerActionPerformed
 
     /**
      * @param args the command line arguments
@@ -571,6 +664,7 @@ public class ServerSide extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable appointmentTable;
+    private javax.swing.JButton closeServer;
     private javax.swing.JTextField day;
     private javax.swing.JTextField hour;
     private javax.swing.JButton jButton1;
@@ -583,6 +677,7 @@ public class ServerSide extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -616,6 +711,159 @@ class ConnectionHandler extends Thread {
     @Override
     public void run() {
         System.out.println("Connection handler started!");
+        try {
+            // Retrieve appointees
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            ServerSide.clientHandlerDB = DriverManager.getConnection("jdbc:mysql://localhost:3306/305?useSSL=false", "root", "");
+            Statement s = ServerSide.clientHandlerDB.createStatement();
+            ResultSet rs = null;
+            rs = s.executeQuery("select * from appointee;");
+            int ssn = 0;
+            String name = "";
+            String password = "";
+            int age = 0;
+            boolean diabetic = false;
+            boolean obese = false;
+            if (rs != null) {
+                while (rs.next()) {
+                    ssn = rs.getInt("ssn");
+                    name = rs.getString("name");
+                    password = rs.getString("password");
+                    age = rs.getInt("age");
+                    int d = rs.getInt("diabetic");
+                    if (d == 1) {
+                        diabetic = true;
+                    } else {
+                        diabetic = false;
+                    }
+                    int ob = rs.getInt("obese");
+                    if (ob == 1) {
+                        obese = true;
+                    } else {
+                        obese = false;
+                    }
+                    ServerSide.appointees.add(new Appointee(ssn, password, name, age, diabetic, obese, true));
+                    s = ServerSide.clientHandlerDB.createStatement();
+                }
+            }
+            System.out.println("Appointees Successfully retreived from Database!");
+            //Retrieve Vaccine Centers
+            s = ServerSide.clientHandlerDB.createStatement();
+            rs = null;
+            rs = s.executeQuery("select * from vaccine_center;");
+            if (rs != null) {
+                String vaccineCenterName;
+                while (rs.next()) {
+                    vaccineCenterName = rs.getString("name");
+                    ServerSide.vaccineCenters.add(new VaccineCenter(vaccineCenterName, null));
+                }
+            }
+            // Retrieve vaccines
+            s = ServerSide.clientHandlerDB.createStatement();
+            rs = null;
+            rs = s.executeQuery("select * from vaccine;");
+            String vaccineName;
+            int numOfShots;
+            int duration;
+            String vcName;
+            if (rs != null) {
+                while (rs.next()) {
+                    vaccineName = rs.getString("name");
+                    numOfShots = rs.getInt("num_of_shots");
+                    duration = rs.getInt("duration_between_shots");
+                    vcName = rs.getString("vaccine_center_name");
+                    Vaccine dbVaccine = new Vaccine(vaccineName, numOfShots, duration);
+                    for (int i = 0; i < ServerSide.vaccineCenters.size(); i++) {
+                        if (ServerSide.vaccineCenters.get(i).getName().equalsIgnoreCase(vcName)) {
+                            ServerSide.vaccineCenters.get(i).setVaccine(dbVaccine);
+                        }
+                    }
+                    ServerSide.vaccines.add(dbVaccine);
+                }
+            }
+            System.out.println("Vaccines Successfully retrieved from Database!");
+            // Retrieve appointments 
+//            s = ServerSide.clientHandlerDB.createStatement();
+//            rs = null;
+//            rs = s.executeQuery("select * from appointment;");
+//            if (rs != null) {
+//                int id;
+//                LocalDateTime ldt;
+//                Date d;
+//                int appointment_priority;
+//                String vacName;
+//                boolean booked;
+//                int appointee_ssn;
+//                while (rs.next()) {
+//                    id = rs.getInt("id");
+//                    d = rs.getDate("date");
+//                    ldt = LocalDateTime.of(d.getYear() + 1900, d.getMonth() + 1, d.getDate(), d.getHours() + 1, d.getMinutes() + 1);
+//                    appointment_priority = rs.getInt("appointment_priority");
+//                    vacName = rs.getString("vaccine_name");
+//                    appointee_ssn = rs.getInt("appointee_ssn");
+//                    int b = rs.getInt("booked");
+//                    if (b == 1) {
+//                        booked = true;
+//                    } else {
+//                        booked = false;
+//                    }
+//
+//                }
+//            }
+
+            //Retrieve appointment_center and correspoding appointment
+            rs = null;
+            if (rs != null) {
+                while (rs.next()) { // Get appointment_center
+                    s = ServerSide.clientHandlerDB.createStatement();
+                    rs = s.executeQuery("select * from appointment_center;");
+                    int appointment_id = rs.getInt("appointment_id");
+                    String center_name = rs.getString("center_name");
+                    PreparedStatement ps = ServerSide.clientHandlerDB.prepareStatement("select * from appointment where id = ?");
+                    ps.setInt(1, appointment_id);
+                    ps.execute();
+                    rs = ps.getResultSet();
+                    Vaccine appVaccine = null;
+                    for (int i = 0; i < ServerSide.vaccineCenters.size(); i++) {
+                        if (center_name.equalsIgnoreCase(ServerSide.vaccineCenters.get(i).getName())) {
+                            appVaccine = ServerSide.vaccineCenters.get(i).getVaccine();
+                        }
+                    }
+                    if (rs != null) { // Get appointments
+                        int id;
+                        LocalDateTime ldt;
+                        Date d;
+                        int appointment_priority;
+                        String vacName;
+                        boolean booked;
+                        int appointee_ssn;
+                        while (rs.next()) { // Get Appointment
+                            id = rs.getInt("id");
+                            d = rs.getDate("date");
+                            ldt = LocalDateTime.of(d.getYear() + 1900, d.getMonth() + 1, d.getDate(), d.getHours() + 1, d.getMinutes() + 1);
+                            appointment_priority = rs.getInt("appointment_priority");
+                            vacName = rs.getString("vaccine_name");
+                            appointee_ssn = rs.getInt("appointee_ssn");
+                            int b = rs.getInt("booked");
+                            if (b == 1) {
+                                booked = true;
+                            } else {
+                                booked = false;
+                            }
+
+                            Appointment dbAppointment = new Appointment(appointment_id, appVaccine, ldt, appointment_priority);
+                        }
+                    }
+
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Connection to Database couldn't be established!");
+        } catch (SQLException ex) {
+            System.out.println("Connection to Database couldn't be established!");
+        } catch (IOException ex) {
+            Logger.getLogger(ConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         // Implement into User Interface
         ServerSocket server = null;
@@ -633,6 +881,10 @@ class ConnectionHandler extends Thread {
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Could not start server!");
                 ex.printStackTrace();
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(ConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SQLException ex) {
+                Logger.getLogger(ConnectionHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -645,15 +897,22 @@ class ClientReader extends Thread {
     Socket s;
     ObjectInputStream ois;
     ClientWriter cw;
+    Connection db;
+    ResultSet rs;
+    PreparedStatement statement;
 
     public void setCw(ClientWriter cw) {
         this.cw = cw;
     }
 
-    public ClientReader(Socket s) throws IOException {
+    public ClientReader(Socket s) throws IOException, ClassNotFoundException, SQLException {
         this.s = s;
         ois = new ObjectInputStream(s.getInputStream());
         cw = new ClientWriter(this.s);
+        ServerSide.clientWriters.add(cw);
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        db = DriverManager.getConnection("jdbc:mysql://localhost:3306/305?useSSL=false", "root", "");
+        System.out.println("Connection to Database established.");
     }
 
     @Override
@@ -679,8 +938,10 @@ class ClientReader extends Thread {
                                 System.out.println("Appointee found!");
                                 ServerSide.appointees.get(i).setLogin(true);
                                 Appointee foundUser = ServerSide.appointees.get(i);
+                                appointee = foundUser;
                                 foundUser.setLogin(true);
                                 cw.WriteAppointee(foundUser);
+                                cw.WriteVaccineCenters(ServerSide.vaccineCenters);
                                 break;
                             }
                         }
@@ -692,6 +953,26 @@ class ClientReader extends Thread {
                         continue;
                     } else {
                         System.out.println("Register Operation!");
+                        statement = db.prepareStatement("insert into appointee values(?, ?, ?, ?, ?, ?)");
+                        statement.setInt(1, appointee.getSsn());
+                        statement.setString(2, appointee.getName());
+                        statement.setString(3, appointee.getPassword());
+                        statement.setInt(4, appointee.getAge());
+                        if (appointee.isDiabetic()) {
+                            statement.setInt(5, 1);
+                        } else {
+                            statement.setInt(5, 0);
+                        }
+                        if (appointee.isObese()) {
+                            statement.setInt(6, 1);
+                        } else {
+                            statement.setInt(6, 0);
+                        }
+
+                        statement.execute();
+                        db.commit();;
+                        System.out.println("Appointee succesfully inserted into database, changes comitted!!");
+
                         ServerSide.appointees.add(appointee);
                         System.out.println("Appointee added!");
                         cw.WriteAppointee(appointee);
@@ -702,18 +983,61 @@ class ClientReader extends Thread {
                         //      4- call method cw.WriteAppointee(appointee) to return appointee object into client
                     }
                     //After Successful login / register, display vaccine centers after fetching from database.
-                    //cw.WriteVaccineCenter(new VaccineCenter("", new Vaccine("", 0, 0)));
+                    cw.WriteVaccineCenters(ServerSide.vaccineCenters);
                     // Return Object of type Vaccine Center.
                 } else if (o instanceof Appointment) { // Critical Section, check if appointment.
+                    System.out.println("Object is of type appointment! (Server)");
                     if (appointee == null) { // Has not yet logged in / registered, restart loop
+                        System.out.println("Appointee has not yet logged in! How is he sending an appointment?");
                         continue;
                     }
                     appointment = (Appointment) o;
-                    if (appointee.getPriority() == appointment.getAppointmentPriority()) {
+                    for (VaccineCenter vc : ServerSide.vaccineCenters) {
+                        for (Appointment a : vc.getDates()) {
+                            if (appointment.getAppointmentID() == a.getAppointmentID()) {
+                                System.out.println("Appointment validated from server!");
+                                appointment = a;
+                            }
+                        }
+                    }
+                    if (appointee.getPriority() >= appointment.getAppointmentPriority()) {
+                        System.out.println("Appointee is of matching priority!");
+                        if (appointment.isBooked()) {
+                            PreparedStatement ps = ServerSide.clientHandlerDB.prepareStatement("update appointment set booked = ? where id = ?");
+                            ps.setInt(1, 0);
+                            ps.setInt(2, appointment.getAppointmentID());
+                            ps.execute();
+                            PreparedStatement ps2 = ServerSide.clientHandlerDB.prepareStatement("update appointment set appointee_ssn = ? where id = ?");
+                            ps2.setNull(1, java.sql.Types.NULL);
+                            ps2.setInt(2, appointment.getAppointmentID());
+                            ps2.execute();
+                            appointment.cancelAppointment();
+                            System.out.println("appointment is already booked! Canceling. SQL Executed.");
+                            cw.WriteAppointment(null);
+                            return;
+                        }
+                        if (appointment.getAppointee() != null && (appointment.getAppointee().getSsn() == appointee.getSsn())) {
+                            System.out.println("Appointment already booked by client using this thread!");
+                            cw.WriteAppointee(null);
+                            return;
+                        }
+                        System.out.println("Appointment Priority: " + appointment.getAppointmentPriority() + ", Appointee"
+                                + " priority: " + appointee.getPriority());
                         if (appointment.bookAppointment(appointee)) { // Appointment is booked for client
                             cw.WriteAppointment(appointment);
+                            PreparedStatement ps = ServerSide.clientHandlerDB.prepareStatement("update appointment set booked = ? where id = ?");
+                            ps.setInt(1, 1);
+                            ps.setInt(2, appointment.getAppointmentID());
+                            ps.execute();
+                            PreparedStatement ps2 = ServerSide.clientHandlerDB.prepareStatement("update appointment set appointee_ssn = ? where id = ?");
+                            ps2.setInt(1, appointee.getSsn());
+                            System.out.println("APPOINTEE SSN: " + appointee.getSsn()+ ", APPOINTMENT ID: " + appointment.getAppointmentID());
+                            ps2.setInt(2, appointment.getAppointmentID());
+                            ps2.execute();
+                            System.out.println("Appointment succesfully booked for appointee! SQL Executed");
                         } else { // Appointment booking failed --> [Already booked, doesn't exist, etc...]
                             cw.WriteAppointment(null); // This needs to be handled in client
+                            System.out.println("Appointment booking failed for appointee!");
                         }
                     }
                 } else if (o == null) {
@@ -724,6 +1048,10 @@ class ClientReader extends Thread {
 
             } catch (IOException ex) {
                 Logger.getLogger(ClientReader.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SQLException ex) {
+                System.out.println("Appointee not added to database!");
+            } finally {
+
             }
         }
     }
@@ -734,11 +1062,6 @@ class ClientWriter { // Not to be continued
 
     Socket s;
     ObjectOutputStream oos;
-    ClientReader cr;
-
-    public void setCr(ClientReader cr) {
-        this.cr = cr;
-    }
 
     public ClientWriter(Socket s) throws IOException {
         System.out.println("Client Writer created!");
@@ -746,8 +1069,8 @@ class ClientWriter { // Not to be continued
         oos = new ObjectOutputStream(s.getOutputStream());
     }
 
-    public void WriteVaccineCenter(VaccineCenter vc) throws IOException {
-        oos.writeObject(vc);
+    public void WriteVaccineCenters(ArrayList<VaccineCenter> vaccineCenters) throws IOException {
+        oos.writeObject(vaccineCenters);
         oos.flush();
         //1- get VaccineCenters from Database
         //2- Send Vaccine Centers to client using OOS

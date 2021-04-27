@@ -5,6 +5,7 @@
  */
 package cpit305project;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -14,7 +15,7 @@ import java.time.Month;
  *
  * @author Ahmed
  */
-public class Appointment {
+public class Appointment implements Serializable {
 
     private LocalDateTime dates[];
     private Vaccine v;
@@ -33,7 +34,7 @@ public class Appointment {
         for (int i = 0; i < dates.length; i++) {
             int year = firstVDate.getYear();
             int month = (firstVDate.getMonth().getValue() + cumulativeDuration);
-            if(month > 12){
+            if (month > 12) {
                 month = month - 12;
                 year++;
             }
@@ -50,8 +51,9 @@ public class Appointment {
     public boolean bookAppointment(Appointee appointee) {
         if (appointee.getPriority() >= appointmentPriority) {
             setAppointee(appointee);
+            System.out.println("Appointment booked and appointee set!");
             booked = true;
-            return true;
+            return booked;
         } else {
             return false;
         }
@@ -101,13 +103,13 @@ public class Appointment {
     public void setAppointmentPriority(int appointmentPriority) {
         this.appointmentPriority = appointmentPriority;
     }
-    
-    public String toString(){
-      String appointments = "Appointment of ID " + appointmentID + ": \n";
+
+    public String toString() {
+        String appointments = "Appointment of ID " + appointmentID + ": \n";
         for (int i = 0; i < dates.length; i++) {
-            appointments += dates[i].toString() + "\n";
+            appointments += "Dose #" + (i + 1) + ": " + dates[i].toString() + "\n";
         }
-        appointments+="\n";
+        appointments += "\n";
         return appointments;
     }
 
